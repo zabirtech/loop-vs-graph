@@ -1,0 +1,7 @@
+{
+  "anna.lindqvist@example.se": { "name": "Anna Lindqvist", "tier": "pro", "orders": 3, "notes": "Order #48211 visar 'in transit' sedan 2026-08-25." },
+  "james.okafor@northwind-industries.com": { "name": "James Okafor", "tier": "enterprise", "orders": 0, "notes": "Northwind Industries, 40 seats, SSO via Okta. Account manager: Lisa Berg." },
+  "erik.johansson@example.se": { "name": "Erik Johansson", "tier": "free", "orders": 0, "notes": "" },
+  "fatima.rahim@example.se": { "name": "Fatima Rahim", "tier": "pro", "orders": 1, "notes": "Kundnummer 10944. Två dragningar på 249 SEK 2026-09-01 syns i billing-loggen." },
+  "eleni.papadopoulou@example.gr": { "name": "Eleni Papadopoulou", "tier": "free", "orders": 2, "notes": "" }
+}
