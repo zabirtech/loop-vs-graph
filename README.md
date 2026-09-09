@@ -10,6 +10,12 @@ Same task, two ways. Five support tickets in `tickets/inbox/` must each get a `t
 
 Requirements: Node ≥ 20, Claude Code with the `ralph-loop` plugin.
 
+The Workflow tool asks for permission on first use. To skip that prompt on stage, opt in locally (this file is gitignored, so the public repo grants nothing to anyone who clones it):
+
+```bash
+cp .claude/settings.local.example.json .claude/settings.local.json
+```
+
 ```bash
 npm test          # validator self-test
 npm run reset     # clear outputs + Ralph state
