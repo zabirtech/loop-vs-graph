@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run check:*)",
+      "Bash(npm run diff)",
+      "Bash(npm run reset)",
+      "Bash(npm test)",
+      "Bash(node scripts/check.mjs:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Read(tickets/**)",
+      "Read(triaged/**)",
+      "Read(TRIAGE.md)",
+      "Write(triaged/**)",
+      "Edit(triaged/**)"
+    ]
+  }
+}
