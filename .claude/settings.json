@@ -1,6 +1,7 @@
 {
   "permissions": {
     "allow": [
+      "Workflow",
       "Bash(npm run check:*)",
       "Bash(npm run diff)",
       "Bash(npm run reset)",
