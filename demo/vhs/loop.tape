@@ -10,7 +10,7 @@ Set Theme "Catppuccin Mocha"
 Type "npm run reset" Enter
 Sleep 1s
 Type "claude" Enter
-Sleep 6s
+Sleep 15s
 Type '/ralph-loop:ralph-loop Triagera alla tickets enligt TRIAGE.md --completion-promise "ALLA TICKETS TRIAGERADE" --max-iterations 8'
 Sleep 1s
 Enter

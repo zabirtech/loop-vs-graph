@@ -8,7 +8,7 @@ Set Framerate 12
 Set PlaybackSpeed 3.0
 Set Theme "Catppuccin Mocha"
 Type "claude" Enter
-Sleep 6s
+Sleep 15s
 Type "/triage-graph"
 Sleep 1s
 Enter
