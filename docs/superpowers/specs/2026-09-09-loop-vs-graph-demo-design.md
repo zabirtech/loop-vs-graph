@@ -23,7 +23,7 @@ Takeaway to land: *graf för det du vet, loop för det du inte vet — i praktik
 | 1 | The loop | 2 | Artifact scene 1 → terminal A: start Ralph loop, leave running |
 | 2 | The graph | 2 | Artifact scene 2 → terminal B: `/triage-graph`, Workflow phases visible |
 | 3 | Side by side: happy path, then Greek edge case | 3 | Artifact scenes 3–4 |
-| 4 | Back to terminals: both green, compare traces | 2 | `npm run check` in both; loop transcript (wandering) vs phase log (straight) |
+| 4 | Back to terminals: both green, compare traces | 2 | `npm run check:loop`, `npm run check:graph`, `npm run diff`; loop transcript (wandering) vs phase log (straight) |
 | 5 | Hybrid + when to use what | 2 | Artifact scenes 5–6 |
 | — | Q&A | rest | |
 
@@ -34,20 +34,23 @@ loop-vs-graph/
 ├── README.md                      EN. What, why, how to run both demos, how to reset.
 ├── CUE-CARDS.md                   SV. One card per scene: tid, säg (stödord), gör, fallback.
 ├── TRIAGE.md                      SV/EN. The task spec the loop prompt points to.
-├── package.json                   scripts: check, reset, test. No runtime deps.
-├── .gitignore                     node_modules, triaged/*.json, .claude/ralph-loop.local.md
+├── package.json                   scripts: check:loop, check:graph, diff, reset, test. No runtime deps.
+├── .gitignore                     node_modules, triaged/*/*.json, .claude/ralph-loop.local.md
 ├── tickets/
 │   ├── inbox/T-001.md … T-005.md  frontmatter: id, from, subject, lang, received
 │   ├── customers.json             fake CRM keyed by email: name, tier (free|pro|enterprise), orders, notes
 │   └── policy.md                  categories, refund limit, escalation rules, priority rules
-├── triaged/.gitkeep               output dir, one JSON per ticket
+├── triaged/loop/.gitkeep          loop output, one JSON per ticket
+├── triaged/graph/.gitkeep         graph output — separate dir so both terminals can run at once
 ├── scripts/
-│   ├── check.mjs                  validator = stop condition (see below)
-│   └── reset.sh                   rm triaged/*.json; rm -f .claude/ralph-loop.local.md
+│   ├── check.mjs                  validator = stop condition. `node scripts/check.mjs loop|graph`
+│   ├── check.test.mjs             node --test
+│   ├── diff.mjs                   side-by-side table of loop vs graph outputs (scene 4 talk)
+│   └── reset.sh                   rm triaged/{loop,graph}/*.json; rm -f .claude/ralph-loop.local.md
 ├── .claude/
 │   ├── commands/triage-graph.md   slash command → run Workflow `triage`
 │   ├── workflows/triage.js        the graph
-│   └── settings.json              pre-allow Bash(npm run check), Bash(npm run reset), Read/Write in tickets/, triaged/
+│   └── settings.json              pre-allow Bash(npm run check:*), Bash(npm run diff), Read tickets/**, Write/Edit triaged/** → no permission prompts live
 └── demo/
     ├── loop-vs-graf.html          the artifact (single file, no CDN, offline-safe)
     ├── cue-cards.html             print CSS, one card per page
@@ -70,7 +73,7 @@ Five tickets. Four sit cleanly in known categories; one does not.
 
 `policy.md` states: categories `refund | login | feature | billing`; anything else is `other` and MUST escalate; refund > 500 SEK MUST escalate; enterprise → priority `high`; reply language must match ticket language; legal/GDPR is never handled by support.
 
-## Output schema (`triaged/T-00X.json`)
+## Output schema (`triaged/<loop|graph>/T-00X.json`)
 
 ```json
 {
@@ -86,10 +89,10 @@ Five tickets. Four sit cleanly in known categories; one does not.
 
 ## Validator (`scripts/check.mjs`) — the stop condition
 
-Node 20, no deps. Exit 0 only when every rule holds; otherwise exit 1 with one line per failure, e.g. `✗ T-001: refund 1200 SEK > 500 → escalate must be true`.
+Node 20, no deps. Usage `node scripts/check.mjs <loop|graph>` (aliases `npm run check:loop`, `npm run check:graph`). Exit 0 only when every rule holds, printing `✓ ALLA TICKETS TRIAGERADE (5/5)`; otherwise exit 1 with one line per failure, e.g. `✗ T-001: refund 1200 SEK > 500 → escalate must be true`.
 
 Rules:
-1. Every `tickets/inbox/*.md` has a `triaged/<id>.json`; no extra `*.json` files (`.gitkeep` ignored).
+1. Every `tickets/inbox/*.md` has a `triaged/<target>/<id>.json`; no extra `*.json` files (`.gitkeep` ignored).
 2. JSON parses, all fields present, enums valid, `id` matches filename.
 3. `language` equals ticket frontmatter `lang`.
 4. `category == other` ⇒ `escalate == true`.
@@ -107,7 +110,7 @@ Speaker types one line in terminal A:
 /ralph-loop:ralph-loop Triagera alla tickets enligt TRIAGE.md --completion-promise "ALLA TICKETS TRIAGERADE" --max-iterations 8
 ```
 
-`TRIAGE.md` tells the agent: read `tickets/policy.md`, `tickets/customers.json`, every inbox ticket; write one JSON per ticket; run `npm run check`; fix until exit 0; only then output `<promise>ALLA TICKETS TRIAGERADE</promise>`. Ralph's stop hook re-feeds the same prompt on every exit without the promise.
+`TRIAGE.md` tells the agent: read `tickets/policy.md`, `tickets/customers.json`, every inbox ticket; write one JSON per ticket into `triaged/loop/`; run `npm run check:loop`; fix until exit 0; only then output `<promise>ALLA TICKETS TRIAGERADE</promise>`. Ralph's stop hook re-feeds the same prompt on every exit without the promise.
 
 Talking point: the inner loop (Claude's turn) and the outer loop (Ralph) are the same shape at different scales. The engineer's artifact is the stop condition, not the path.
 
@@ -123,10 +126,10 @@ results  = pipeline(inbox.ids,
   id  => agent(classify id → {category, language, customerEmail, refundAmount})   phase Klassificera, schema, effort low
   cls => parallel([ agent(customer lookup → {tier}), agent(policy check → {mustEscalate, priority}) ])   phase Berika
   ctx => ctx.cls.category === 'other' || ctx.pol.mustEscalate
-           ? agent(write triaged/<id>.json escalate:true)          phase Eskalera   // ← the edge you add after it bit you
+           ? agent(write triaged/graph/<id>.json escalate:true)          phase Eskalera   // ← the edge you add after it bit you
            : agent(draft reply in ticket language, write JSON)     phase Svara
 )
-verify   = agent(run npm run check, report)                          phase Verifiera (barrier: needs all outputs)
+verify   = agent(run npm run check:graph, report)                          phase Verifiera (barrier: needs all outputs)
 return { tickets, verify }
 ```
 
@@ -168,7 +171,7 @@ Timing: each scene auto-plays its animation in ≤ 25 s and then idles; speaker 
 ## Testing
 
 - `check.mjs`: fixture-driven test (`scripts/check.test.mjs`, `node --test`): valid set passes; missing file, bad enum, refund-without-escalate, enterprise-not-high, other-without-escalate each fail with the expected line.
-- Workflow: builder test-runs `triage` once end-to-end here after `npm run reset`; then `npm run check` must exit 0. Transcript saved as `demo/runs/graph-run.md`.
+- Workflow: builder test-runs `triage` once end-to-end here after `npm run reset`; then `npm run check:graph` must exit 0. Transcript saved as `demo/runs/graph-run.md`.
 - Loop: builder cannot start Ralph in the speaker's terminal; speaker runs it once Thursday. `TRIAGE.md` reviewed for the promise wording matching the stop hook's exact-match rule.
 - Artifact: loaded headless (browser-automation skill); zero console errors; screenshot per scene; keyboard navigation verified.
 
