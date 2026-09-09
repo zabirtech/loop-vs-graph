@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Loop vs Graf</title>
+<style>
+:root{
+  --bg:#0e1116;--panel:#151a21;--line:#232a35;--fg:#e8ebf0;--mut:#8a93a3;
+  --loop:#f5a524;--graph:#22c8e0;--ok:#3ddc84;--bad:#ff5c5c;
+  --sans:"Avenir Next","Helvetica Neue",-apple-system,system-ui,"Segoe UI",Roboto,sans-serif;
+  --mono:"SF Mono",Menlo,ui-monospace,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font:15px/1.45 var(--sans);display:grid;grid-template-rows:auto 1fr auto;grid-template-columns:1fr auto;height:100dvh;overflow:hidden}
+header{grid-column:1/-1;display:flex;align-items:center;gap:20px;padding:10px 18px;border-bottom:1px solid var(--line)}
+.brand{font-weight:600;font-size:19px;letter-spacing:-.01em}
+.brand .l{color:var(--loop)}.brand .g{color:var(--graph)}.brand .vs{color:var(--mut);font-weight:400;margin:0 8px}
+nav{display:flex;gap:6px;margin-left:auto}
+nav button,.ctl button{background:transparent;color:var(--mut);border:1px solid var(--line);border-radius:8px;padding:6px 11px;font:inherit;font-size:14px;cursor:pointer}
+nav button.on{color:var(--fg);border-color:var(--fg)}
+nav button:focus-visible,.ctl button:focus-visible{outline:2px solid var(--graph);outline-offset:2px}
+.ctl{display:flex;gap:6px}
+main{grid-column:1;grid-row:2;position:relative;overflow:hidden;padding:12px 18px;min-width:0}
+.scene{position:absolute;inset:12px 18px;display:flex;flex-direction:column;gap:8px}
+.scene h1{margin:0;font-size:clamp(22px,2.6vw,32px);font-weight:600;letter-spacing:-.02em;line-height:1.15}
+.scene h1 small{color:var(--mut);font-size:.55em;font-weight:400;margin-left:14px;letter-spacing:0}
+.stage{flex:1;min-height:0;display:grid;place-items:center}
+.stage svg{width:100%;height:100%;max-height:100%}
+.caption{min-height:1.6em;color:var(--fg);font-size:clamp(16px,1.7vw,24px);text-align:center;opacity:0;transition:opacity .5s;text-wrap:balance}
+.caption.show{opacity:1}
+aside{grid-column:2;grid-row:2;width:420px;border-left:1px solid var(--line);background:var(--panel);padding:16px 20px;overflow:auto;font-size:15px}
+aside[hidden]{display:none}
+aside h2{margin:0 0 2px;font-size:17px;font-weight:600}
+aside .t{color:var(--mut);margin-bottom:12px;font-family:var(--mono);font-size:13px}
+aside h3{margin:16px 0 4px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);font-weight:600}
+aside ul{margin:0;padding-left:18px}aside li{margin:5px 0}
+aside code{font:13px var(--mono);background:#0b0e13;padding:3px 7px;border-radius:5px;display:inline-block;margin-top:2px;word-break:break-all;color:var(--fg)}
+aside .clock{font:600 28px var(--mono);margin-top:18px;color:var(--fg);font-variant-numeric:tabular-nums}
+footer{grid-column:1/-1;color:var(--mut);font-size:13px;padding:8px 18px;border-top:1px solid var(--line);font-family:var(--mono)}
+/* SVG primitives */
+.guide{fill:none;stroke:none}
+.node rect,.node circle,.node polygon{fill:var(--panel);stroke:var(--line);stroke-width:2;transition:stroke .3s,fill .3s}
+.node text{fill:var(--fg);font:600 22px var(--sans);text-anchor:middle;dominant-baseline:middle}
+.node.g.lit rect,.node.g.lit polygon,.node.g.lit circle{stroke:var(--graph);fill:#12303a}
+.node.l.lit rect,.node.l.lit polygon,.node.l.lit circle{stroke:var(--loop);fill:#3a2a12}
+.node.ok rect,.node.ok circle,.node.ok polygon{stroke:var(--ok)!important;fill:#12321f!important}
+.node.bad rect,.node.bad circle,.node.bad polygon{stroke:var(--bad)!important;fill:#3a1414!important;animation:pulse .6s ease-in-out 3}
+@keyframes pulse{50%{stroke-width:6}}
+.paused .node.bad rect,.paused .node.bad polygon{animation-play-state:paused}
+@media (prefers-reduced-motion:reduce){.node.bad rect,.node.bad polygon{animation:none}}
+.edge{fill:none;stroke:var(--line);stroke-width:3;stroke-linecap:round}
+.edge.dash{stroke-dasharray:10 10}
+.edge.over{stroke:var(--graph)}.edge.over.l{stroke:var(--loop)}
+.ring{fill:none;stroke:var(--line);stroke-width:3}
+.token{fill:var(--graph);filter:drop-shadow(0 0 6px var(--graph))}
+.token.l{fill:var(--loop);filter:drop-shadow(0 0 6px var(--loop))}
+.card{fill:#1a212b;stroke:var(--line);stroke-width:2}
+.card.gone{opacity:.18;transition:opacity .5s}
+.cardhd{fill:var(--mut);font:600 15px var(--sans);letter-spacing:.08em;dominant-baseline:hanging}
+.cardtx{fill:var(--fg);font:19px var(--mono);dominant-baseline:hanging}
+.cardtx .k{fill:var(--graph)}.cardtx .a{fill:var(--loop)}
+.tk{fill:var(--fg);font:600 19px var(--mono);text-anchor:middle;dominant-baseline:middle}
+.log text{fill:var(--mut);font:19px var(--mono);dominant-baseline:hanging}
+.log text.ok{fill:var(--ok)}.log text.bad{fill:var(--bad)}.log text.hd{fill:var(--fg);font-weight:600}
+.cnt{fill:var(--fg);font:600 22px var(--mono);text-anchor:middle;dominant-baseline:middle;font-variant-numeric:tabular-nums}
+.cnt.small{font-size:19px;font-weight:400;fill:var(--mut)}
+.lbl{font:600 18px var(--sans);letter-spacing:.12em;text-anchor:middle;dominant-baseline:middle}
+/* table scene */
+.tbl{width:100%;max-width:1100px;border-collapse:collapse;font-size:clamp(15px,1.6vw,22px)}
+.tbl th,.tbl td{padding:10px 16px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.tbl th{color:var(--mut);font-weight:600;font-size:.72em;letter-spacing:.1em;text-transform:uppercase}
+.tbl td:first-child{color:var(--mut)}.tbl td:nth-child(2){color:var(--loop)}.tbl td:nth-child(3){color:var(--graph)}
+.tbl tbody tr{opacity:0;transform:translateY(6px);transition:opacity .5s,transform .5s}
+.tbl tbody tr.in{opacity:1;transform:none}
+.take{font-size:clamp(20px,2.5vw,34px);font-weight:600;letter-spacing:-.01em;text-align:center;margin-top:22px;opacity:0;transition:opacity .8s;text-wrap:balance}
+.take.show{opacity:1}
+.take span{color:var(--mut);font-weight:400}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="l">Loop</span><span class="vs">vs</span><span class="g">Graf</span></div>
+  <nav id="nav" aria-label="Scener"></nav>
+  <div class="ctl">
+    <button id="play" title="Space">▶</button>
+    <button id="again" title="R">↻</button>
+    <button id="notes" title="N">N</button>
+    <button id="full" title="F">⛶</button>
+  </div>
+</header>
+<main id="main"></main>
+<aside id="aside" hidden></aside>
+<footer>← → scener · Space spela/pausa · R om · N stödord · F fullskärm · E lägg till kant (scen 4)</footer>
+<script>
+// ── Engine: one virtual clock drives timers and tweens, so Space freezes everything ──
+const clock = { t: 0, last: 0, paused: true, rate: 1, timers: [], anims: [] };
+const at = (ms, fn) => clock.timers.push({ when: clock.t + ms, fn });
+const tween = (dur, step, done) => clock.anims.push({ start: clock.t, dur, step, done });
+const ease = p => p < .5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+function tick(now) {
+  if (!clock.last) clock.last = now;
+  if (!clock.paused) clock.t += (now - clock.last) * clock.rate;
+  clock.last = now;
+  const due = clock.timers.filter(x => x.when <= clock.t).sort((a, b) => a.when - b.when);
+  clock.timers = clock.timers.filter(x => x.when > clock.t);
+  due.forEach(x => x.fn());
+  for (const a of clock.anims) { const p = Math.min(1, (clock.t - a.start) / a.dur); a.step(p); if (p >= 1) { a.dead = true; if (a.done) a.done(); } }
+  clock.anims = clock.anims.filter(a => !a.dead);
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+function setPaused(p) { clock.paused = p; document.body.classList.toggle('paused', p); document.getElementById('play').textContent = p ? '▶' : '⏸'; }
+
+// ── SVG helpers ──────────────────────────────────────────────────────────────
+const NS = 'http://www.w3.org/2000/svg';
+const el = (tag, attrs = {}, parent) => { const e = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); if (parent) parent.appendChild(e); return e; };
+const txt = (parent, x, y, s, cls = '') => { const t = el('text', { x, y, class: cls }, parent); t.textContent = s; return t; };
+function node(parent, kind, x, y, label, shape = 'rect', w = 190, h = 62) {
+  const g = el('g', { class: `node ${kind}`, transform: `translate(${x} ${y})` }, parent);
+  if (shape === 'rect') el('rect', { x: -w / 2, y: -h / 2, width: w, height: h, rx: 12 }, g);
+  if (shape === 'diamond') el('polygon', { points: `0,${-h / 2 - 6} ${w / 2 - 20},0 0,${h / 2 + 6} ${-w / 2 + 20},0` }, g);
+  txt(g, 0, 1, label);
+  return g;
+}
+const mark = (g, cls) => { g.classList.remove('lit', 'ok', 'bad'); if (cls) g.classList.add(cls); };
+// Base edge is always visible (the structure at rest); drawEdge lays a colored overlay on top.
+const edge = (parent, d, dashed = false) => el('path', { d, class: `edge${dashed ? ' dash' : ''}` }, parent);
+function drawEdge(base, dur = 600, kind = 'g') {
+  const over = el('path', { d: base.getAttribute('d'), class: `edge over ${kind}` }, base.parentNode);
+  if (base.classList.contains('dash')) { over.classList.add('dash'); over.style.opacity = 0; tween(dur, p => { over.style.opacity = p; }); return over; }
+  const len = base.getTotalLength(); over.style.strokeDasharray = len; over.style.strokeDashoffset = len;
+  tween(dur, p => { over.style.strokeDashoffset = len * (1 - p); });
+  return over;
+}
+function token(parent, kind, path, dur, onEnd, r = 9) {
+  const len = path.getTotalLength();
+  const c = el('circle', { class: `token ${kind}`, r }, parent);
+  const set = p => { const pt = path.getPointAtLength(p * len); c.setAttribute('cx', pt.x); c.setAttribute('cy', pt.y); };
+  set(0); tween(dur, set, () => { c.remove(); if (onEnd) onEnd(); });
+  return c;
+}
+function logger(parent, x, y, max = 4, lh = 28) {
+  const g = el('g', { class: 'log', transform: `translate(${x} ${y})` }, parent); const lines = [];
+  return {
+    add(s, cls = '') { const t = txt(g, 0, lines.length * lh, s, cls); lines.push(t); if (lines.length > max) { lines.shift().remove(); lines.forEach((l, i) => l.setAttribute('y', i * lh)); } return t; },
+  };
+}
+const svgIn = stage => { stage.innerHTML = ''; return el('svg', { viewBox: '0 0 1200 620', role: 'img' }, stage); };
+const cap = (c, s) => { c.textContent = s; c.classList.toggle('show', !!s); };
+
+// ── Loop: a ring with four stations. lap(i, ok, verdict, startAt) schedules one iteration. ──
+function buildLoop(svg, cx, cy, r) {
+  const g = el('g', { transform: `translate(${cx} ${cy})` }, svg);
+  el('circle', { r, class: 'ring' }, g);
+  const P = [[0, -r], [r, 0], [0, r], [-r, 0]];
+  const arcs = P.map((a, i) => { const b = P[(i + 1) % 4]; return el('path', { d: `M ${a[0]} ${a[1]} A ${r} ${r} 0 0 1 ${b[0]} ${b[1]}`, class: 'guide' }, g); });
+  const n = {
+    think: node(g, 'l', 0, -r, 'Tänk', 'rect', 150, 54),
+    act: node(g, 'l', r, 0, 'Agera', 'rect', 150, 54),
+    observe: node(g, 'l', 0, r, 'Observera', 'rect', 178, 54),
+    done: node(g, 'l', -r, 0, 'Klar?', 'diamond', 150, 54),
+  };
+  const order = [n.think, n.act, n.observe, n.done];
+  const counter = txt(g, 0, -12, 'Iteration 0', 'cnt');
+  const sub = txt(g, 0, 22, 'väntar på Space', 'cnt small');
+  function lap(i, ok, verdict, startAt = 0) {
+    const seg = 700;
+    at(startAt, () => { counter.textContent = `Iteration ${i}`; sub.textContent = ''; mark(n.done); });
+    arcs.forEach((a, k) => at(startAt + k * seg, () => { mark(order[k], 'lit'); if (k) mark(order[k - 1]); token(g, 'l', a, seg); }));
+    at(startAt + 4 * seg, () => { mark(n.observe); mark(n.done, ok ? 'ok' : 'bad'); sub.textContent = verdict || (ok ? 'check ✓' : 'check ✗'); });
+    return 4 * seg + 900;
+  }
+  return { g, n, counter, sub, lap };
+}
+// Tiny loop used inside a graph node (scene 5): ring + four dots + an orbiting token, no text.
+function buildMiniLoop(parent, cx, cy, r) {
+  const g = el('g', { transform: `translate(${cx} ${cy})` }, parent);
+  el('circle', { r, class: 'ring' }, g).style.strokeWidth = 1;
+  [[0, -r], [r, 0], [0, r], [-r, 0]].forEach(([x, y]) => { const d = el('circle', { cx: x, cy: y, r: 2.6 }, g); d.style.fill = 'var(--loop)'; });
+  const ring = el('path', { d: `M 0 ${-r} A ${r} ${r} 0 1 1 0 ${r} A ${r} ${r} 0 1 1 0 ${-r}`, class: 'guide' }, g);
+  const orbit = (laps, dur, startAt = 0) => { for (let i = 0; i < laps; i++) at(startAt + i * dur, () => token(g, 'l', ring, dur, null, 3)); return laps * dur; };
+  return { g, orbit };
+}
+
+// ── Graph: a fixed DAG. flow(route, startAt, seg) sends one ticket through. ──
+function buildGraph(svg, ox = 0, oy = 0, scale = 1, opts = {}) {
+  const g = el('g', { transform: `translate(${ox} ${oy}) scale(${scale})` }, svg);
+  const d = {
+    inCls: 'M 150 300 L 195 300',
+    clsCust: 'M 405 300 C 430 300 430 200 455 200',
+    clsPol: 'M 405 300 C 430 300 430 400 455 400',
+    custCond: 'M 605 200 C 650 200 650 300 695 300',
+    polCond: 'M 605 400 C 650 400 650 300 695 300',
+    condReply: 'M 765 300 C 810 300 810 210 855 210',
+    condEsc: 'M 765 300 C 805 300 805 400 845 400',
+    replyVer: 'M 1005 210 C 1025 210 1025 300 1045 300',
+    escVer: 'M 1015 400 C 1030 400 1030 300 1045 300',
+  };
+  const e = Object.fromEntries(Object.entries(d).map(([k, v]) => [k, edge(g, v, k === 'condEsc' || k === 'escVer')]));
+  const n = {
+    inbox: node(g, 'g', 80, 300, 'Inbox', 'rect', 140),
+    cls: node(g, 'g', 300, 300, 'Klassificera', 'rect', 210),
+    cust: node(g, 'g', 530, 200, 'Kund', 'rect', 150),
+    pol: node(g, 'g', 530, 400, 'Policy', 'rect', 150),
+    cond: node(g, 'g', 730, 300, '?', 'diamond', 110, 60),
+    reply: node(g, 'g', 930, 210, 'Svara', 'rect', 150),
+    esc: node(g, 'g', 930, 400, 'Eskalera', 'rect', 170),
+    verify: node(g, 'g', 1120, 300, 'Verifiera', 'rect', 150),
+  };
+  const escParts = [n.esc, e.condEsc, e.escVer];
+  if (opts.hideEscalate) escParts.forEach(x => { x.style.opacity = 0; });
+  const order = ['inCls', 'clsCust', 'clsPol', 'custCond', 'polCond', 'condReply', 'condEsc', 'replyVer', 'escVer'];
+  function drawAll(step = 300, startAt = 0) {
+    order.forEach((k, i) => { if (opts.hideEscalate && (k === 'condEsc' || k === 'escVer')) return; at(startAt + i * step, () => drawEdge(e[k], step * 2)); });
+    return order.length * step + step;
+  }
+  // route: 'reply' | 'esc' | 'stuck' (stops at the condition node with no edge to take)
+  function flow(route, startAt = 0, seg = 650) {
+    const hop = (t, key, after) => at(startAt + t, () => token(g, 'g', e[key], seg, after ? () => mark(after, 'lit') : null));
+    at(startAt, () => mark(n.inbox, 'lit'));
+    hop(0, 'inCls', n.cls);
+    hop(seg, 'clsCust', n.cust); hop(seg, 'clsPol', n.pol);          // two tokens at once: parallel branches
+    at(startAt + seg, () => mark(n.inbox));
+    hop(2 * seg, 'custCond', n.cond); hop(2 * seg, 'polCond');
+    at(startAt + 2 * seg, () => mark(n.cls));
+    at(startAt + 3 * seg, () => { mark(n.cust); mark(n.pol); });
+    if (route === 'stuck') { at(startAt + 3 * seg + 120, () => { n.cls.querySelector('text').textContent = 'other?'; mark(n.cond, 'bad'); }); return 3 * seg + 120; }
+    hop(3 * seg, route === 'esc' ? 'condEsc' : 'condReply', route === 'esc' ? n.esc : n.reply);
+    at(startAt + 4 * seg, () => mark(n.cond));
+    hop(4 * seg, route === 'esc' ? 'escVer' : 'replyVer', n.verify);
+    at(startAt + 5 * seg, () => mark(route === 'esc' ? n.esc : n.reply));
+    at(startAt + 5 * seg + 250, () => mark(n.verify, 'ok'));
+    return 5 * seg + 250;
+  }
+  function showEscalate() { escParts.forEach(x => { x.style.transition = 'opacity .6s'; x.style.opacity = 1; }); drawEdge(e.condEsc, 700); drawEdge(e.escVer, 700); }
+  return { g, n, e, drawAll, flow, showEscalate };
+}
+
+// ── Cue text (same words as CUE-CARDS.md) ───────────────────────────────────
+const CUES = [
+  { title: 'Hook + Loopen', time: '0:00–3:00', say: ['Samma uppgift: fem supportärenden. Två sätt att bygga agenten.', 'Loop: en prompt + ett stoppvillkor. Modellen väljer vägen.', 'Tänk → Agera → Observera → Klar?', 'Claude Code är redan en loop. Ralph gör loopen yttre och explicit: samma prompt igen tills promisen är sann.', 'Min artefakt är stoppvillkoret, inte vägen.'], do: ['Terminal A:', '/ralph-loop:ralph-loop Triagera alla tickets enligt TRIAGE.md --completion-promise "ALLA TICKETS TRIAGERADE" --max-iterations 8', 'Enter. Låt köra. Tillbaka hit.'], fallback: 'demo/runs/loop-run.md' },
+  { title: 'Grafen', time: '3:00–5:00', say: ['Jag ritar noderna: Inbox → Klassificera → Kund ∥ Policy → Svara | Eskalera → Verifiera.', 'Varje nod = ett bundet agentanrop med schema.', 'Kanterna är kod. Parallellism gratis. Faserna syns live.'], do: ['Terminal B:', '/triage-graph', 'Peka på faserna. Tillbaka hit.'], fallback: 'demo/runs/graph-run.md' },
+  { title: 'Sida vid sida', time: '5:00–6:30', say: ['Fyra vanliga ärenden. Båda gröna.', 'Loopen tog ett antal steg jag inte visste i förväg.', 'Grafen tog exakt så många som jag ritade.', 'Kostnad: loop okänd, graf bunden.'], do: [], fallback: '' },
+  { title: 'Edge case: T-005', time: '6:30–10:00', say: ['Grekiska. GDPR. Ingen kategori passar.', 'Loopen: check säger nej, ett varv till, landar på other + eskalera.', 'Grafen: "other" – ingen kant. Stopp.', 'E: kanten du lägger till efter att den bitit dig.', 'Grafen kräver att du såg det komma. Loopen kräver att du litar på modellen.', 'Sen terminalerna: två gröna, två olika spår. Loopens spår läser du i efterhand. Grafens ritade du i förväg.'], do: ['E = lägg till kant', 'Terminal A: npm run check:loop', 'Terminal B: npm run check:graph', 'npm run diff'], fallback: 'npm run diff funkar på förkörda filer' },
+  { title: 'Hybrid', time: '10:00–11:00', say: ['Zooma in i en nod – där sitter en loop.', 'Varje agent()-nod i Workflow ÄR en Claude Code-loop.', 'Struktur utanpå, frihet inuti.'], do: [], fallback: '' },
+  { title: 'När använda vad', time: '11:00–12:00', say: ['Graf för det du vet. Loop för det du inte vet.', 'Oftast: graf med loopar i noderna.', 'Fråga till rummet: var har ni loopar som borde vara grafer – och grafer som borde vara loopar?'], do: [], fallback: '' },
+];
+const TABLE = [
+  ['Förutsägbarhet', 'Låg – modellen väljer vägen', 'Hög – du ritade vägen'],
+  ['Observability', 'Transkript i efterhand', 'Faser och noder live'],
+  ['Parallellism', 'Sekventiell per default', 'Gratis: pipeline / parallel'],
+  ['Kostnadskontroll', 'Svår – kan snurra', 'Bunden per nod'],
+  ['Okända fall', 'Improviserar', 'Ingen kant = stopp'],
+  ['Upfront-design', 'En prompt + stoppvillkor', 'Noder, kanter, scheman'],
+  ['Passar när', 'Utforskande · "fixa tills grönt"', 'Produktion · repeterbart · granskbart'],
+];
+
+// ── Scenes ───────────────────────────────────────────────────────────────────
+function card(svg, x, y, w, h, head, lines) {
+  const g = el('g', { transform: `translate(${x} ${y})` }, svg);
+  el('rect', { width: w, height: h, rx: 10, class: 'card' }, g);
+  txt(g, 16, 14, head, 'cardhd');
+  const t = el('text', { x: 16, y: 42, class: 'cardtx' }, g);
+  lines.forEach((ln, i) => { const s = el('tspan', { x: 16, dy: i ? 26 : 0 }, t); if (typeof ln === 'string') s.textContent = ln; else { s.textContent = ln.text; s.setAttribute('class', ln.cls); } });
+  return g;
+}
+
+function sceneLoop(stage, caption) {
+  const svg = svgIn(stage);
+  card(svg, 30, 60, 340, 100, 'PROMPT', ['Triagera alla tickets', 'enligt TRIAGE.md']);
+  card(svg, 30, 190, 340, 128, 'STOPPVILLKOR', ['npm run check:loop → 0', { text: '<promise>ALLA TICKETS', cls: 'k' }, { text: 'TRIAGERADE</promise>', cls: 'k' }]);
+  const loop = buildLoop(svg, 640, 265, 165);
+  const tickets = ['T-001', 'T-002', 'T-003', 'T-004', 'T-005'].map((id, i) => {
+    const g = el('g', { transform: `translate(950 ${60 + i * 54})` }, svg);
+    el('rect', { width: 220, height: 44, rx: 8, class: 'card' }, g);
+    txt(g, 110, 23, id + (i === 4 ? ' · ΕΛ' : ''), 'tk'); return g;
+  });
+  txt(svg, 950, 44, 'INBOX', 'cardhd');
+  const log = logger(svg, 30, 480, 4);
+  let t = 300;
+  at(t, () => { cap(caption, 'Iteration 1: läs policy, läs tickets, skriv JSON, kör check.'); log.add('$ läser policy.md · customers.json · 5 tickets'); });
+  tickets.forEach((tk, i) => at(t + 900 + i * 220, () => tk.querySelector('rect').classList.add('gone')));
+  t += loop.lap(1, false, 'check ✗ · 2 problem', t);
+  at(t - 700, () => { log.add('✗ T-001: refund 1200 SEK > 500 ⇒ escalate måste vara true', 'bad'); log.add('✗ T-005: category other ⇒ escalate måste vara true', 'bad'); });
+  at(t, () => cap(caption, 'Stoppvillkoret säger nej → samma prompt igen.'));
+  t += loop.lap(2, false, 'check ✗ · 1 problem', t);
+  at(t - 700, () => log.add('✗ T-005: category other ⇒ escalate måste vara true', 'bad'));
+  at(t, () => cap(caption, 'Ett varv till. Modellen valde vägen – jag valde bara målet.'));
+  t += loop.lap(3, true, 'check ✓', t);
+  at(t - 700, () => { log.add('✓ ALLA TICKETS TRIAGERADE (5/5) · triaged/loop/', 'ok'); log.add('<promise>ALLA TICKETS TRIAGERADE</promise>', 'ok'); });
+  at(t + 200, () => cap(caption, 'Loop engineering: du äger stoppvillkoret, inte vägen.'));
+}
+
+function sceneGraph(stage, caption) {
+  const svg = svgIn(stage);
+  const G = buildGraph(svg, 0, -20, 1);
+  const log = logger(svg, 30, 500, 3);
+  let t = 300;
+  at(t, () => cap(caption, 'Noderna ritas i förväg. Kanterna är kod.'));
+  t += G.drawAll(280, t) + 300;
+  at(t, () => { cap(caption, 'pipeline(): ingen barriär – ticket 2 klassificeras medan ticket 1 får svar.'); log.add('▸ Inbox   ▸ Klassificera   ▸ Berika (kund ∥ policy)   ▸ Svara | Eskalera   ▸ Verifiera', 'hd'); });
+  const routes = ['esc', 'reply', 'reply', 'reply', 'esc'];   // T-001 refund>500, T-002..T-004 reply, T-005 other
+  let end = 0;
+  routes.forEach((r, i) => { end = Math.max(end, t + i * 900 + G.flow(r, t + i * 900, 600)); });
+  at(t + 900, () => log.add('klassificera:T-001 ✓   kund:T-001 ∥ policy:T-001   → eskalera:T-001'));
+  at(t + 2700, () => log.add('klassificera:T-003 ✓   svara:T-002 ✓   klassificera:T-004 …'));
+  at(end + 200, () => { cap(caption, 'Varje steg synligt. Varje nod bunden. Okänt fall = saknad kant.'); log.add('✓ ALLA TICKETS TRIAGERADE (5/5) · triaged/graph/', 'ok'); });
+}
+
+function sideLabels(svg) {
+  txt(svg, 300, 36, 'LOOP', 'lbl').style.fill = 'var(--loop)';
+  txt(svg, 870, 36, 'GRAF', 'lbl').style.fill = 'var(--graph)';
+}
+
+function sceneSide(stage, caption) {
+  const svg = svgIn(stage);
+  sideLabels(svg);
+  const loop = buildLoop(svg, 300, 290, 150);
+  const G = buildGraph(svg, 540, 130, 0.55);
+  const lc = txt(svg, 300, 560, 'steg: 0', 'cnt'); const gc = txt(svg, 870, 560, 'steg: 0 av 20', 'cnt');
+  let steps = 0; const bump = k => at(k, () => { steps++; lc.textContent = `steg: ${steps}`; });
+  at(100, () => cap(caption, 'T-001 … T-004. Samma fyra ärenden in i båda.'));
+  G.drawAll(100, 100);
+  let t = 400;
+  t += loop.lap(1, false, 'check ✗', t); for (let k = 0; k < 6; k++) bump(500 + k * 480);
+  t += loop.lap(2, true, 'check ✓', t); for (let k = 0; k < 5; k++) bump(500 + 3000 + k * 480);
+  ['esc', 'reply', 'reply', 'reply'].forEach((r, i) => { G.flow(r, 700 + i * 800, 500); at(700 + i * 800 + 2750, () => { gc.textContent = `steg: ${(i + 1) * 5} av 20`; }); });
+  at(t + 300, () => cap(caption, 'Båda gröna. Loopen: 11 steg jag inte kunde förutse. Grafen: 20, exakt som ritat.'));
+}
+
+function sceneEdge(stage, caption, api) {
+  const svg = svgIn(stage);
+  sideLabels(svg);
+  const loop = buildLoop(svg, 300, 290, 150);
+  const G = buildGraph(svg, 540, 130, 0.55, { hideEscalate: true });
+  const badge = el('g', { transform: 'translate(500 66)' }, svg);
+  el('rect', { width: 200, height: 46, rx: 8, class: 'card' }, badge);
+  txt(badge, 100, 24, 'T-005 · ΕΛ · GDPR', 'tk');
+  const llog = logger(svg, 60, 500, 3); const glog = logger(svg, 620, 500, 3);
+  at(100, () => cap(caption, 'Ticket fem. Grekiska. GDPR. Ingen kategori passar.'));
+  G.drawAll(90, 100);
+  let t = 400;
+  t += loop.lap(1, false, 'check ✗', t); at(t - 600, () => llog.add('✗ T-005: category other ⇒ escalate', 'bad'));
+  t += loop.lap(2, true, 'check ✓', t); at(t - 600, () => llog.add('✓ ALLA TICKETS TRIAGERADE (5/5)', 'ok'));
+  const stuckAt = 700 + G.flow('stuck', 700, 550);
+  at(stuckAt + 200, () => { glog.add('✗ ingen kant för category=other', 'bad'); });
+  at(Math.max(stuckAt, t) + 300, () => cap(caption, 'Grafen: "other" – och ingen kant. Stopp.   [E] lägg till kant'));
+  let added = false;
+  api.onKey('e', () => {
+    if (added) return; added = true;
+    G.showEscalate(); glog.add('+ kant: ? → Eskalera', 'ok'); cap(caption, 'Kanten du lägger till efter att den bitit dig.');
+    at(900, () => { mark(G.n.cond); G.n.cls.querySelector('text').textContent = 'Klassificera'; G.flow('esc', 0, 500); });
+    at(900 + 5 * 500 + 500, () => { glog.add('✓ ALLA TICKETS TRIAGERADE (5/5)', 'ok'); cap(caption, 'Grafen kräver att du såg det komma. Loopen kräver att du litar på modellen.'); });
+  });
+}
+
+function sceneHybrid(stage, caption) {
+  const svg = svgIn(stage);
+  const G = buildGraph(svg, 0, -10, 1);
+  G.drawAll(80, 100);
+  const mini = buildMiniLoop(G.g, 930, 210, 24); mini.g.style.opacity = 0;
+  const label = G.n.reply.querySelector('text');
+  const context = [...G.g.children].filter(c => c !== G.n.reply && c !== mini.g);
+  at(1400, () => cap(caption, 'Titta in i en nod.'));
+  at(2400, () => {
+    tween(1400, p => {
+      const q = ease(p), s = 1 + 2 * q, tx = (600 - 930 * 3) * q, ty = -10 + (310 - 210 * 3 + 10) * q;
+      G.g.setAttribute('transform', `translate(${tx} ${ty}) scale(${s})`);
+      label.style.opacity = 1 - q;
+      context.forEach(c => { c.style.opacity = 1 - 0.8 * q; });
+    });
+  });
+  at(3700, () => { tween(600, p => { mini.g.style.opacity = p; }); mini.orbit(4, 1500, 300); });
+  at(4300, () => cap(caption, 'Varje agent()-nod är en Claude Code-loop. Struktur utanpå, frihet inuti.'));
+}
+
+function sceneTable(stage, caption) {
+  stage.innerHTML = '';
+  const wrap = document.createElement('div'); wrap.style.cssText = 'width:100%;display:flex;flex-direction:column;align-items:center;overflow:auto;max-height:100%';
+  const table = document.createElement('table'); table.className = 'tbl';
+  table.innerHTML = '<thead><tr><th></th><th style="color:var(--loop)">Loop</th><th style="color:var(--graph)">Graf</th></tr></thead><tbody>' +
+    TABLE.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('') + '</tbody>';
+  const take = document.createElement('div'); take.className = 'take';
+  take.innerHTML = 'Graf för det du vet. Loop för det du inte vet.<br><span>Oftast: graf med loopar i noderna.</span>';
+  wrap.append(table, take); stage.append(wrap);
+  [...table.tBodies[0].rows].forEach((r, i) => at(300 + i * 650, () => r.classList.add('in')));
+  at(300 + TABLE.length * 650 + 300, () => take.classList.add('show'));
+}
+
+const SCENES = [
+  { title: 'Loopen', sub: 'en prompt + ett stoppvillkor', build: sceneLoop },
+  { title: 'Grafen', sub: 'du ritar noderna, kanterna är kod', build: sceneGraph },
+  { title: 'Sida vid sida', sub: 'fyra vanliga ärenden', build: sceneSide },
+  { title: 'Edge case', sub: 'T-005 · grekiska · GDPR', build: sceneEdge },
+  { title: 'Hybrid', sub: 'graf med loopar i noderna', build: sceneHybrid },
+  { title: 'När använda vad', sub: '', build: sceneTable },
+];
+
+// ── Scene manager, presenter panel, keys ────────────────────────────────────
+const main = document.getElementById('main'), nav = document.getElementById('nav'), aside = document.getElementById('aside');
+let cur = -1, keyHandlers = {}, started = null;
+const api = { onKey: (k, fn) => { keyHandlers[k] = fn; } };
+SCENES.forEach((s, i) => { const b = document.createElement('button'); b.textContent = `${i + 1} ${s.title}`; b.onclick = () => go(i); nav.append(b); });
+function go(i, force = false) {
+  i = Math.max(0, Math.min(SCENES.length - 1, i)); if (i === cur && !force) return;
+  cur = i; clock.timers = []; clock.anims = []; keyHandlers = {}; setPaused(true);
+  [...nav.children].forEach((b, k) => b.classList.toggle('on', k === i));
+  main.innerHTML = '';
+  const sec = document.createElement('section'); sec.className = 'scene';
+  sec.innerHTML = `<h1>${SCENES[i].title}<small>${SCENES[i].sub}</small></h1><div class="stage"></div><div class="caption"></div>`;
+  main.append(sec);
+  SCENES[i].build(sec.querySelector('.stage'), sec.querySelector('.caption'), api);
+  renderNotes();
+  try { localStorage.setItem('lvg.scene', String(i)); } catch (e) {}
+}
+function renderNotes() {
+  const c = CUES[cur]; if (!c) return;
+  const isCmd = s => /^(\/|npm |E =)/.test(s);
+  aside.innerHTML = `<h2>${cur + 1}. ${c.title}</h2><div class="t">${c.time}</div>
+    <h3>Säg</h3><ul>${c.say.map(s => `<li>${s}</li>`).join('')}</ul>
+    ${c.do.length ? `<h3>Gör</h3><ul>${c.do.map(s => isCmd(s) ? `<li><code>${s.replace(/</g, '&lt;')}</code></li>` : `<li>${s}</li>`).join('')}</ul>` : ''}
+    ${c.fallback ? `<h3>Om det går fel</h3><ul><li>${c.fallback}</li></ul>` : ''}
+    <div class="clock" id="clk">00:00</div>`;
+}
+setInterval(() => {
+  const e = document.getElementById('clk'); if (!e || !started) return;
+  const s = Math.floor((Date.now() - started) / 1000);
+  e.textContent = `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+}, 500);
+document.getElementById('play').onclick = () => { if (!started) started = Date.now(); setPaused(!clock.paused); };
+document.getElementById('again').onclick = () => go(cur, true);
+document.getElementById('notes').onclick = () => { aside.hidden = !aside.hidden; };
+document.getElementById('full').onclick = () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); };
+addEventListener('keydown', ev => {
+  const k = ev.key.toLowerCase();
+  if (ev.key === 'ArrowRight') go(cur + 1);
+  else if (ev.key === 'ArrowLeft') go(cur - 1);
+  else if (ev.key === ' ') { ev.preventDefault(); document.getElementById('play').click(); }
+  else if (k === 'r') go(cur, true);
+  else if (k === 'n') aside.hidden = !aside.hidden;
+  else if (k === 'f') document.getElementById('full').click();
+  else if (/^[1-6]$/.test(k)) go(Number(k) - 1);
+  else if (keyHandlers[k]) keyHandlers[k]();
+});
+let initial = 0; try { initial = Number(localStorage.getItem('lvg.scene')) || 0; } catch (e) {}
+go(initial);
+</script>
+</body>
+</html>
