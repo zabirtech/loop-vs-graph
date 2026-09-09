@@ -4,7 +4,7 @@ Same task, two ways. Five support tickets in `tickets/inbox/` must each get a `t
 
 - **Loop** — one prompt + one stop condition. Claude Code's Ralph loop re-feeds the same prompt until the completion promise is true. Output: `triaged/loop/`.
 - **Graph** — nodes and edges drawn up front as a Workflow script (`.claude/workflows/triage.js`). Output: `triaged/graph/`.
-- **Artifact** — `demo/loop-vs-graf.html`: six animated scenes (Swedish) with a presenter panel (`N`). Works offline from `file://`. Published copy: ARTIFACT_URL
+- **Artifact** — `demo/loop-vs-graf.html`: six animated scenes (Swedish) with a presenter panel (`N`). Works offline from `file://`. Published copy: https://claude.ai/code/artifact/1bbb5fae-daab-4dde-992e-957efabeb241
 
 ## Run it
 
