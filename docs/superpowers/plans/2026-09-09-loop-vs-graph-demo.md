@@ -1283,10 +1283,10 @@ Sleep 240s
 
 ```bash
 git add -A && git commit -m "docs: README, artifact link, vhs tapes"
-gh repo create zabirtech/loop-vs-graph --private --source=. --remote=origin --push
+gh repo create zabirtech/loop-vs-graph --public --source=. --remote=origin --push
 ```
 
-Expected: repo URL printed. (Private by default; Sabir flips to public if colleagues should clone.)
+Expected: repo URL printed. Public, so colleagues can clone right after the talk.
 
 ---
 
