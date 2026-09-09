@@ -4,6 +4,8 @@ Tangenter i artifacten: ←/→ scen · Space spela · R om · N stödord · F f
 
 ## Kort 0 · Innan du börjar
 - Terminal A och B öppna i repot, `claude` startat i båda. `npm run reset` körd.
+- Första gången `claude` startas i repot: trust-dialogen har **"No, exit"** förvalt → pil ner + Enter.
+- Körschema rad för rad: `MANUS.md`.
 - Artifact öppen i Chrome, F för fullskärm, presenter-panelen AV.
 - Nät? Om nej: öppna `demo/runs/` – kör bara artifacten.
 - Klocka på. Mål 12 min.
