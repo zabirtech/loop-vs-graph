@@ -34,7 +34,7 @@ Enter. Låt köra. Tillbaka till artifacten.
 
 ## Kort 6 · Tillbaka till terminalerna (8:00–10:00)
 **Gör:** Terminal A: scrolla, visa varven. `npm run check:loop`. Terminal B: fasloggen. `npm run check:graph`. Sen `npm run diff`.
-**Säg:** Två gröna. Två helt olika spår. Loopens spår läser du i efterhand. Grafens spår ritade du i förväg.
+**Säg:** Två gröna. Två helt olika spår. Loopens spår läser du i efterhand. Grafens spår ritade du i förväg. Blev loopen klar på ett varv: "Det visste jag inte i förväg – det är poängen med ett stoppvillkor."
 **Om det går fel:** `npm run diff` funkar på förkörda filer.
 
 ## Kort 7 · Hybrid + när använda vad (10:00–12:00) · Scen 5 Space, sen scen 6 Space

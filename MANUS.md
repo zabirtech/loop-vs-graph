@@ -57,7 +57,7 @@ Torrkör hela manuset minst två gånger: en gång torsdag kväll med klocka, en
 | 5:00 | Chrome | `→` scen 3, `Space` | Båda kör, ~8 s. Loop "steg: 11", graf "steg: 20 av 20". |
 | 6:30 | Chrome | `→` scen 4, `Space`. Vänta på röd diamant (~3 s). **Fråga rummet: "Vad händer med grafen nu?" Paus.** Tryck `E`. | Kanten `? → Eskalera` ritas, token går igenom, grönt. |
 | 8:00 | **Terminal B** | Cmd-Tab. Bör vara klar. | JSON-resultat + `✓ ALLA TICKETS TRIAGERADE (5/5) · triaged/graph/`. Inte klar? Prata om faserna som syns tills den är det. |
-| 8:30 | **Terminal A** | Scrolla upp lite. | `npm run check:loop`-utskrifter med ✗-rader som blir färre, sen `✓`. Om klar: `<promise>ALLA TICKETS TRIAGERADE</promise>` sist. Om den kör: "🔄 Ralph iteration N" syns – *det* är loopen, peka på den. |
+| 8:30 | **Terminal A** | Scrolla upp lite. | Troligast: klar på **ett varv** (~40 s) med tabell + `<promise>ALLA TICKETS TRIAGERADE</promise>` sist. Säg: "Ett varv räckte den här gången. Det visste jag inte i förväg – det är hela poängen med ett stoppvillkor." Om den behövde fler varv: `✗`-rader som blir färre och "🔄 Ralph iteration N" – peka, *det* är loopen. |
 | 9:30 | Terminal A | `npm run diff` | Tabell: T-001 `refund ⚠ eskalerad` i båda, T-005 `other ⚠ eskalerad` i båda, T-002 `login/high`. Säg: "Två gröna. Två olika spår." |
 | 10:00 | Chrome | `→` scen 5, `Space` | Zoom in i Svara-noden, mini-loop snurrar. |
 | 11:00 | Chrome | `→` scen 6, `Space` | Tabellen rad för rad, takeaway. Ställ frågan till rummet. |
@@ -79,6 +79,7 @@ Tidsregler: ligger du på 9:00 när båda terminalerna är klara – hoppa scen 
 | Terminal A: `Unknown command /ralph-loop:ralph-loop` | Plugin ej laddad. Skriv istället: `Triagera alla tickets enligt TRIAGE.md. Kör npm run check:loop och rätta tills den är grön.` Claude Codes inre loop gör jobbet. Säg: "Det här är loopen utan den yttre loopen – samma form." |
 | Terminal B: frågar om Workflow-permission | `settings.local.json` saknas. Svara Yes och kör vidare. |
 | Terminal B: `Workflow "triage" not found` | Kommandot faller tillbaka på scriptPath. Om inte: skriv `Kör Workflow med scriptPath .claude/workflows/triage.js`. |
+| Loopen blir klar på ett varv (troligt) | Inget fel. Claude Codes inre loop gjorde jobbet, Ralphs yttre loop bekräftade. Säg det. Artifactens scen 1 visar tre varv för att visa *formen*, inte förutsäga antalet. |
 | Loopen kör fler än 4–5 varv | Låt gå – `--max-iterations 8` stoppar den. Säg: "Loopen har ingen inbyggd budget. Därför max-iterations." |
 | Loopen kör vidare efter demon | `/ralph-loop:cancel-ralph` |
 | check blir aldrig grön för loopen | Visa ✗-raderna – det *är* poängen (stoppvillkoret säger nej). Gå vidare på tid. |
