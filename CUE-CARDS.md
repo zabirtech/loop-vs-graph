@@ -1,42 +1,67 @@
-# Cue cards – Loop vs Graf (12 min, svenska)
+# Cue cards – Loop vs Graf (kortversion av MANUS.md, samma numrering)
 
-Tangenter i artifacten: ←/→ scen · Space spela · R om · N stödord · F fullskärm · E lägg till kant (scen 4)
+Tangenter: ←/→ scen · Space spela · R om · N stödord · F fullskärm · E lägg till kant (scen 4)
 
-## Kort 0 · Innan du börjar
-- Terminal A och B öppna i repot, `claude` startat i båda. `npm run reset` körd.
-- Första gången `claude` startas i repot: trust-dialogen har **"No, exit"** förvalt → pil ner + Enter.
-- Körschema rad för rad: `MANUS.md`.
-- Artifact öppen i Chrome, F för fullskärm, presenter-panelen AV.
-- Nät? Om nej: öppna `demo/runs/` – kör bara artifacten.
-- Klocka på. Mål 12 min.
+## Kort 0 · Innan du går upp
+- Terminal A + B i repot, `claude` startat i båda. `npm run reset` körd. Ralph-raden i klippbordet.
+- Chrome: artifact, scen 1, `F`. Presenter-panel av.
+- Första gången `claude` startas i repot: trust-dialogen har "No, exit" förvalt → pil ner + Enter.
+- Inget nät? Kör bara artifacten + `demo/runs/`.
 
-## Kort 1 · Hook (0:00–1:00) · Scen 1, stilla
-**Säg:** Samma uppgift: triagera fem supportärenden. Två sätt att bygga agenten. Loop: en prompt och ett stoppvillkor. Graf: jag ritar noderna själv. Frågan är inte vilket som är bäst – utan vad du vet i förväg.
-**Gör:** Ingenting ännu.
+## 1 · 0:00 · Hook · Chrome scen 1, stilla
+- Två sätt att bygga en agent för samma uppgift: fem supportärenden.
+- Loop engineering. Graph engineering.
+- Frågan är inte vilket som är bäst. Frågan är: vad vet du i förväg?
 
-## Kort 2 · Loopen (1:00–3:00) · Scen 1, Space
-**Säg:** Prompt + stoppvillkor. Modellen väljer vägen. Tänk → Agera → Observera → Klar? Claude Code är redan en loop – Ralph gör loopen yttre och explicit: samma prompt igen tills promisen är sann. Min artefakt är stoppvillkoret, inte vägen.
-**Gör:** Terminal A:
-`/ralph-loop:ralph-loop Triagera alla tickets enligt TRIAGE.md --completion-promise "ALLA TICKETS TRIAGERADE" --max-iterations 8`
-Enter. Låt köra. Tillbaka till artifacten.
-**Om det går fel:** Visa `demo/runs/loop-run.md`.
+## 2 · 1:00 · Förklara loopen · Space
+- Prompt + stoppvillkor. Tänk, agera, observera, klar? Ett varv till.
+- Vägen väljer modellen. Jag äger målet.
+- Claude Code är redan en loop. Ralph = samma prompt igen tills promise-frasen är sann.
+- Stoppvillkoret är `npm run check`. Grönt = klart.
 
-## Kort 3 · Grafen (3:00–5:00) · Scen 2, Space
-**Säg:** Jag ritar noderna: Inbox → Klassificera → Kund ∥ Policy → Svara eller Eskalera → Verifiera. Varje nod är ett bundet agentanrop med schema. Kanterna är kod. Parallellism gratis. Faserna syns live.
-**Gör:** Terminal B: `/triage-graph` Enter. Peka på faserna. Tillbaka.
-**Om det går fel:** Visa `demo/runs/graph-run.md`.
+## 3 · 2:00 · Starta loopen · Terminal A
+- **GÖR:** klistra in Ralph-raden, Enter (ev. två). Tillbaka till Chrome.
+- En rad. Uppgift i fil, promise som stopp, max åtta varv som säkerhetsbälte.
+- "Nu jobbar den. Vi låter den vara."
 
-## Kort 4 · Sida vid sida (5:00–6:30) · Scen 3, Space
-**Säg:** Fyra vanliga ärenden. Båda gröna. Loopen tog ett antal steg jag inte visste i förväg. Grafen tog exakt så många som jag ritade. Kostnad: loop okänd, graf bunden.
+## 4 · 3:00 · Förklara grafen · Chrome scen 2, Space
+- Jag ritar noderna i förväg: Inbox → Klassificera → Kund ∥ Policy → villkor → Svara | Eskalera → Verifiera.
+- Varje nod: bundet anrop med schema. Kanterna är kod.
+- Gratis: parallellism, observerbarhet, känd kostnad. Priset: du måste veta strukturen innan.
 
-## Kort 5 · Edge case (6:30–8:00) · Scen 4, Space, sen E
-**Säg:** Ticket fem. Grekiska. GDPR. Ingen kategori passar. Loopen: check säger nej, ett varv till, landar på other + eskalera. Grafen: Klassificera säger "other" – och det finns ingen kant. Stopp. *(E)* Kanten du lägger till efter att den bitit dig. Grafen kräver att du såg det komma. Loopen kräver att du litar på modellen.
+## 5 · 4:00 · Starta grafen · Terminal B
+- **GÖR:** `/triage-graph`, Enter (ev. två). Peka på faserna. Tillbaka till Chrome.
+- Claude Codes Workflow. Faserna = grafen på riktigt. 22 anrop, alla med schema.
 
-## Kort 6 · Tillbaka till terminalerna (8:00–10:00)
-**Gör:** Terminal A: scrolla, visa varven. `npm run check:loop`. Terminal B: fasloggen. `npm run check:graph`. Sen `npm run diff`.
-**Säg:** Två gröna. Två helt olika spår. Loopens spår läser du i efterhand. Grafens spår ritade du i förväg. Blev loopen klar på ett varv: "Det visste jag inte i förväg – det är poängen med ett stoppvillkor."
-**Om det går fel:** `npm run diff` funkar på förkörda filer.
+## 6 · 5:00 · Sida vid sida · Chrome scen 3, Space
+- Fyra vanliga ärenden. Båda gröna.
+- Loopen: elva steg, okänt i förväg. Grafen: tjugo, exakt som ritat.
+- Loopens kostnad okänd tills klar. Grafens bunden innan start.
 
-## Kort 7 · Hybrid + när använda vad (10:00–12:00) · Scen 5 Space, sen scen 6 Space
-**Säg:** Zooma in i en nod – där sitter en loop. Varje agent()-nod i Workflow ÄR en Claude Code-loop. Struktur utanpå, frihet inuti. Tabellen. Takeaway: Graf för det du vet. Loop för det du inte vet. Oftast: graf med loopar i noderna.
-**Fråga till rummet:** Var i era pipelines har ni loopar som borde vara grafer – och grafer som borde vara loopar?
+## 7 · 6:30 · Edge case · Chrome scen 4, Space, vänta på rött, fråga, sen E
+- Ärende fem: grekiska, GDPR, ingen kategori passar.
+- Loopen: check säger nej, ett varv till, grönt. Improviserade.
+- Grafen: "other", ingen kant. Stopp.
+- **Fråga rummet: "Vad gör man med grafen nu?"** Paus. `E`.
+- Kanten du lägger till efter att den bitit dig.
+- Grafen kräver att du såg det komma. Loopen kräver att du litar på modellen.
+
+## 8 · 8:00 · Terminalerna · B, sen A, sen `npm run diff`
+- B: "Grafen är klar. Grönt. 22 anrop, noll fel."
+- A, ett varv: "Det visste jag inte i förväg. Poängen med ett stoppvillkor: jag behöver inte veta."
+- A, flera varv: "Röda rader som blir färre. Det är loopen."
+- diff: "Samma beslut. Två gröna. Två olika spår. Loopens läser jag i efterhand, grafens ritade jag i förväg."
+
+## 9 · 10:00 · Hybrid · Chrome scen 5, Space
+- Zooma in i en nod. Där sitter en loop.
+- Varje agentanrop i Workflow = en Claude Code-loop med eget stoppvillkor.
+- Struktur utanpå, frihet inuti. Inte loop eller graf: graf med loopar i noderna.
+
+## 10 · 11:00 · När använda vad · Chrome scen 6, Space
+- Loop när du inte vet vägen: utforskande, "fixa tills grönt", prototyper.
+- Graf när du vet vägen och den ska köras hundra gånger: produktion, revision, kostnad.
+- Oftast båda: graf för det du vet, loop i noderna för det du inte vet.
+- Fråga: var har ni loopar som borde vara grafer, och grafer som borde vara loopar?
+
+## 11 · 12:00 · Klart
+- Q&A. github.com/zabirtech/loop-vs-graph

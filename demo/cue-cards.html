@@ -12,15 +12,13 @@ body { margin: 0; }
 .card:last-child { page-break-after: auto; break-after: auto; }
 h1 { font-size: 26px; margin: 0 0 6px; }
 h2 { font-size: 22px; margin: 0 0 4px; }
-.meta { color: #666; margin: 0 0 12px; font-size: 14px; }
-.keys { color: #444; font-size: 15px; margin: 8px 0 0; }
-dl { margin: 0; }
-dt { font-weight: 700; margin-top: 10px; text-transform: uppercase; font-size: 12px; letter-spacing: .06em; color: #444; }
-dd { margin: 2px 0 0; font-size: 17px; }
+.meta { color: #666; margin: 0 0 10px; font-size: 14px; }
 ul { margin: 6px 0 0; padding-left: 20px; font-size: 17px; }
-li { margin: 4px 0; }
+li { margin: 5px 0; }
+li.do { font-weight: 600; }
+li.ask { font-weight: 600; color: #8a2be2; }
 code { font: 14px ui-monospace, SFMono-Regular, Menlo, monospace; background: #f2f2f2; padding: 1px 5px; border-radius: 3px; }
-code.big { display: block; font-size: 15px; padding: 8px 10px; margin-top: 4px; white-space: pre-wrap; word-break: break-all; }
+code.big { display: block; font-size: 15px; padding: 8px 10px; margin-top: 6px; white-space: pre-wrap; word-break: break-all; }
 .amber { color: #b26a00; } .cyan { color: #007a8a; }
 @media screen {
   body { background: #e9e9ee; }
@@ -32,94 +30,116 @@ code.big { display: block; font-size: 15px; padding: 8px 10px; margin-top: 4px; 
 
 <article class="card">
   <h1><span class="amber">Loop</span> vs <span class="cyan">Graf</span> – cue cards</h1>
-  <p class="meta">12 min · svenska · utvecklare</p>
-  <h2>Kort 0 · Innan du börjar</h2>
+  <p class="meta">12 min · svenska · samma numrering som MANUS.md</p>
+  <h2>Kort 0 · Innan du går upp</h2>
   <ul>
-    <li>Terminal A och B öppna i repot, <code>claude</code> startat i båda. <code>npm run reset</code> körd.</li>
-    <li>Artifact öppen i Chrome, <code>F</code> för fullskärm, presenter-panelen AV.</li>
-    <li>Nät? Om nej: öppna <code>demo/runs/</code> – kör bara artifacten.</li>
-    <li>Klocka på. Mål 12 min.</li>
+    <li>Terminal A + B i repot, <code>claude</code> startat i båda. <code>npm run reset</code> körd. Ralph-raden i klippbordet.</li>
+    <li>Chrome: artifact, scen 1, <code>F</code>. Presenter-panel av.</li>
+    <li>Första gången <code>claude</code> startas i repot: trust-dialogen har "No, exit" förvalt → pil ner + Enter.</li>
+    <li>Inget nät? Kör bara artifacten + <code>demo/runs/</code>.</li>
   </ul>
-  <p class="keys">Tangenter: ←/→ scen · Space spela · R om · N stödord · F fullskärm · E lägg till kant (scen 4)</p>
+  <code class="big">/ralph-loop:ralph-loop Triagera alla tickets enligt TRIAGE.md --completion-promise "ALLA TICKETS TRIAGERADE" --max-iterations 8</code>
+  <p class="meta">Tangenter: ←/→ scen · Space spela · R om · N stödord · F fullskärm · E lägg till kant (scen 4)</p>
 </article>
 
 <article class="card">
-  <h2>Kort 1 · Hook</h2>
-  <p class="meta">0:00–1:00 · Scen 1, stilla</p>
-  <dl>
-    <dt>Säg</dt>
-    <dd>Samma uppgift: triagera fem supportärenden. Två sätt att bygga agenten. Loop: en prompt och ett stoppvillkor. Graf: jag ritar noderna själv. Frågan är inte vilket som är bäst – utan vad du vet i förväg.</dd>
-    <dt>Gör</dt>
-    <dd>Ingenting ännu.</dd>
-  </dl>
+  <h2>1 · Hook</h2><p class="meta">0:00 · Chrome scen 1, stilla</p>
+  <ul>
+    <li>Två sätt att bygga en agent för samma uppgift: fem supportärenden.</li>
+    <li>Loop engineering. Graph engineering.</li>
+    <li>Frågan är inte vilket som är bäst. Frågan är: vad vet du i förväg?</li>
+  </ul>
 </article>
 
 <article class="card">
-  <h2>Kort 2 · Loopen</h2>
-  <p class="meta">1:00–3:00 · Scen 1, Space</p>
-  <dl>
-    <dt>Säg</dt>
-    <dd>Prompt + stoppvillkor. Modellen väljer vägen. Tänk → Agera → Observera → Klar? Claude Code är redan en loop – Ralph gör loopen yttre och explicit: samma prompt igen tills promisen är sann. Min artefakt är stoppvillkoret, inte vägen.</dd>
-    <dt>Gör</dt>
-    <dd>Terminal A:<code class="big">/ralph-loop:ralph-loop Triagera alla tickets enligt TRIAGE.md --completion-promise "ALLA TICKETS TRIAGERADE" --max-iterations 8</code>Enter. Låt köra. Tillbaka till artifacten.</dd>
-    <dt>Om det går fel</dt>
-    <dd>Visa <code>demo/runs/loop-run.md</code>.</dd>
-  </dl>
+  <h2>2 · Förklara loopen</h2><p class="meta">1:00 · Space</p>
+  <ul>
+    <li>Prompt + stoppvillkor. Tänk, agera, observera, klar? Ett varv till.</li>
+    <li>Vägen väljer modellen. Jag äger målet.</li>
+    <li>Claude Code är redan en loop. Ralph = samma prompt igen tills promise-frasen är sann.</li>
+    <li>Stoppvillkoret är <code>npm run check</code>. Grönt = klart.</li>
+  </ul>
 </article>
 
 <article class="card">
-  <h2>Kort 3 · Grafen</h2>
-  <p class="meta">3:00–5:00 · Scen 2, Space</p>
-  <dl>
-    <dt>Säg</dt>
-    <dd>Jag ritar noderna: Inbox → Klassificera → Kund ∥ Policy → Svara eller Eskalera → Verifiera. Varje nod är ett bundet agentanrop med schema. Kanterna är kod. Parallellism gratis. Faserna syns live.</dd>
-    <dt>Gör</dt>
-    <dd>Terminal B: <code>/triage-graph</code> Enter. Peka på faserna. Tillbaka.</dd>
-    <dt>Om det går fel</dt>
-    <dd>Visa <code>demo/runs/graph-run.md</code>.</dd>
-  </dl>
+  <h2>3 · Starta loopen</h2><p class="meta">2:00 · Terminal A</p>
+  <ul>
+    <li class="do">GÖR: klistra in Ralph-raden, Enter (ev. två). Tillbaka till Chrome.</li>
+    <li>En rad. Uppgift i fil, promise som stopp, max åtta varv som säkerhetsbälte.</li>
+    <li>"Nu jobbar den. Vi låter den vara."</li>
+  </ul>
 </article>
 
 <article class="card">
-  <h2>Kort 4 · Sida vid sida</h2>
-  <p class="meta">5:00–6:30 · Scen 3, Space</p>
-  <dl>
-    <dt>Säg</dt>
-    <dd>Fyra vanliga ärenden. Båda gröna. Loopen tog ett antal steg jag inte visste i förväg. Grafen tog exakt så många som jag ritade. Kostnad: loop okänd, graf bunden.</dd>
-  </dl>
+  <h2>4 · Förklara grafen</h2><p class="meta">3:00 · Chrome scen 2, Space</p>
+  <ul>
+    <li>Jag ritar noderna i förväg: Inbox → Klassificera → Kund ∥ Policy → villkor → Svara | Eskalera → Verifiera.</li>
+    <li>Varje nod: bundet anrop med schema. Kanterna är kod.</li>
+    <li>Gratis: parallellism, observerbarhet, känd kostnad. Priset: du måste veta strukturen innan.</li>
+  </ul>
 </article>
 
 <article class="card">
-  <h2>Kort 5 · Edge case</h2>
-  <p class="meta">6:30–8:00 · Scen 4, Space, sen E</p>
-  <dl>
-    <dt>Säg</dt>
-    <dd>Ticket fem. Grekiska. GDPR. Ingen kategori passar. Loopen: check säger nej, ett varv till, landar på other + eskalera. Grafen: Klassificera säger "other" – och det finns ingen kant. Stopp. <em>(E)</em> Kanten du lägger till efter att den bitit dig. Grafen kräver att du såg det komma. Loopen kräver att du litar på modellen.</dd>
-  </dl>
+  <h2>5 · Starta grafen</h2><p class="meta">4:00 · Terminal B</p>
+  <ul>
+    <li class="do">GÖR: <code>/triage-graph</code>, Enter (ev. två). Peka på faserna. Tillbaka till Chrome.</li>
+    <li>Claude Codes Workflow. Faserna = grafen på riktigt. 22 anrop, alla med schema.</li>
+  </ul>
 </article>
 
 <article class="card">
-  <h2>Kort 6 · Tillbaka till terminalerna</h2>
-  <p class="meta">8:00–10:00</p>
-  <dl>
-    <dt>Gör</dt>
-    <dd>Terminal A: scrolla, visa varven. <code>npm run check:loop</code>. Terminal B: fasloggen. <code>npm run check:graph</code>. Sen <code>npm run diff</code>.</dd>
-    <dt>Säg</dt>
-    <dd>Två gröna. Två helt olika spår. Loopens spår läser du i efterhand. Grafens spår ritade du i förväg.</dd>
-    <dt>Om det går fel</dt>
-    <dd><code>npm run diff</code> funkar på förkörda filer.</dd>
-  </dl>
+  <h2>6 · Sida vid sida</h2><p class="meta">5:00 · Chrome scen 3, Space</p>
+  <ul>
+    <li>Fyra vanliga ärenden. Båda gröna.</li>
+    <li>Loopen: elva steg, okänt i förväg. Grafen: tjugo, exakt som ritat.</li>
+    <li>Loopens kostnad okänd tills klar. Grafens bunden innan start.</li>
+  </ul>
 </article>
 
 <article class="card">
-  <h2>Kort 7 · Hybrid + när använda vad</h2>
-  <p class="meta">10:00–12:00 · Scen 5 Space, sen scen 6 Space</p>
-  <dl>
-    <dt>Säg</dt>
-    <dd>Zooma in i en nod – där sitter en loop. Varje agent()-nod i Workflow ÄR en Claude Code-loop. Struktur utanpå, frihet inuti. Tabellen. Takeaway: Graf för det du vet. Loop för det du inte vet. Oftast: graf med loopar i noderna.</dd>
-    <dt>Fråga till rummet</dt>
-    <dd>Var i era pipelines har ni loopar som borde vara grafer – och grafer som borde vara loopar?</dd>
-  </dl>
+  <h2>7 · Edge case</h2><p class="meta">6:30 · Chrome scen 4, Space · vänta på rött · fråga · E</p>
+  <ul>
+    <li>Ärende fem: grekiska, GDPR, ingen kategori passar.</li>
+    <li>Loopen: check säger nej, ett varv till, grönt. Improviserade.</li>
+    <li>Grafen: "other", ingen kant. Stopp.</li>
+    <li class="ask">Fråga rummet: "Vad gör man med grafen nu?" Paus. Tryck E.</li>
+    <li>Kanten du lägger till efter att den bitit dig.</li>
+    <li>Grafen kräver att du såg det komma. Loopen kräver att du litar på modellen.</li>
+  </ul>
+</article>
+
+<article class="card">
+  <h2>8 · Terminalerna</h2><p class="meta">8:00 · B, sen A, sen <code>npm run diff</code></p>
+  <ul>
+    <li>B: "Grafen är klar. Grönt. 22 anrop, noll fel."</li>
+    <li>A, ett varv: "Det visste jag inte i förväg. Poängen med ett stoppvillkor: jag behöver inte veta."</li>
+    <li>A, flera varv: "Röda rader som blir färre. Det är loopen."</li>
+    <li>diff: "Samma beslut. Två gröna. Två olika spår. Loopens läser jag i efterhand, grafens ritade jag i förväg."</li>
+  </ul>
+</article>
+
+<article class="card">
+  <h2>9 · Hybrid</h2><p class="meta">10:00 · Chrome scen 5, Space</p>
+  <ul>
+    <li>Zooma in i en nod. Där sitter en loop.</li>
+    <li>Varje agentanrop i Workflow = en Claude Code-loop med eget stoppvillkor.</li>
+    <li>Struktur utanpå, frihet inuti. Inte loop eller graf: graf med loopar i noderna.</li>
+  </ul>
+</article>
+
+<article class="card">
+  <h2>10 · När använda vad</h2><p class="meta">11:00 · Chrome scen 6, Space</p>
+  <ul>
+    <li>Loop när du inte vet vägen: utforskande, "fixa tills grönt", prototyper.</li>
+    <li>Graf när du vet vägen och den ska köras hundra gånger: produktion, revision, kostnad.</li>
+    <li>Oftast båda: graf för det du vet, loop i noderna för det du inte vet.</li>
+    <li class="ask">Fråga: var har ni loopar som borde vara grafer, och grafer som borde vara loopar?</li>
+  </ul>
+</article>
+
+<article class="card">
+  <h2>11 · Klart</h2><p class="meta">12:00</p>
+  <ul><li>Q&amp;A. github.com/zabirtech/loop-vs-graph</li></ul>
 </article>
 
 </body>
