@@ -45,14 +45,24 @@ Torrkör hela manuset minst två gånger: en gång torsdag kväll med klocka, en
 
 ## 2. Körschema (mål 12:00)
 
+**Ralph-raden** – det enda du skriver i terminal A (vid 2:00). Kopiera exakt:
+```
+/ralph-loop:ralph-loop Triagera alla tickets enligt TRIAGE.md --completion-promise "ALLA TICKETS TRIAGERADE" --max-iterations 8
+```
+
+**Graf-kommandot** – det enda du skriver i terminal B (vid 4:00):
+```
+/triage-graph
+```
+
 | Tid | Var | Gör | Förväntat på skärmen |
 |----:|-----|-----|----------------------|
 | 0:00 | Chrome, scen 1 | Ingenting. Säg hooken (kort 1). | Loop-ringen stilla, "Iteration 0 · väntar på Space" |
 | 1:00 | Chrome | `Space` | Tre varv, ~12 s. Röd ✗ två gånger, grön ✓ och `<promise>` på tredje |
-| 2:00 | **Terminal A** | Skriv raden nedan. `Enter`. Om autocomplete-menyn står kvar: `Enter` igen. | Setup-scriptet svarar "Ralph loop started / iteration 1 / promise: ALLA TICKETS TRIAGERADE". Sen börjar Claude läsa `policy.md`. |
+| 2:00 | **Terminal A** | Skriv **Ralph-raden** (kodblocket ovanför tabellen). `Enter`. Om autocomplete-menyn står kvar: `Enter` igen. | Setup-scriptet svarar "Ralph loop started / iteration 1 / promise: ALLA TICKETS TRIAGERADE". Sen börjar Claude läsa `policy.md`. |
 | 2:20 | Chrome | Cmd-Tab tillbaka. Säg: "Den kör nu. Vi låter den jobba." | |
 | 3:00 | Chrome | `→` till scen 2, `Space` | Kanterna ritas cyan, fem tokens flödar förskjutet, ~10 s |
-| 4:00 | **Terminal B** | Skriv `/triage-graph`. `Enter` (ev. två). | Workflow startar. Fasboxar dyker upp: Inbox → Klassificera → Berika → Svara / Eskalera → Verifiera. ~2 min totalt. Peka på faserna. |
+| 4:00 | **Terminal B** | Skriv **Graf-kommandot** `/triage-graph`. `Enter` (ev. två). | Workflow startar. Fasboxar dyker upp: Inbox → Klassificera → Berika → Svara / Eskalera → Verifiera. ~2 min totalt. Peka på faserna. |
 | 4:30 | Chrome | Cmd-Tab tillbaka. | |
 | 5:00 | Chrome | `→` scen 3, `Space` | Båda kör, ~8 s. Loop "steg: 11", graf "steg: 20 av 20". |
 | 6:30 | Chrome | `→` scen 4, `Space`. Vänta på röd diamant (~3 s). **Fråga rummet: "Vad händer med grafen nu?" Paus.** Tryck `E`. | Kanten `? → Eskalera` ritas, token går igenom, grönt. |
@@ -62,11 +72,6 @@ Torrkör hela manuset minst två gånger: en gång torsdag kväll med klocka, en
 | 10:00 | Chrome | `→` scen 5, `Space` | Zoom in i Svara-noden, mini-loop snurrar. |
 | 11:00 | Chrome | `→` scen 6, `Space` | Tabellen rad för rad, takeaway. Ställ frågan till rummet. |
 | 12:00 | | Klart. Q&A. | |
-
-Raden till terminal A (kort 2):
-```
-/ralph-loop:ralph-loop Triagera alla tickets enligt TRIAGE.md --completion-promise "ALLA TICKETS TRIAGERADE" --max-iterations 8
-```
 
 Tidsregler: ligger du på 9:00 när båda terminalerna är klara – hoppa scen 3. Ligger du på 13:00 – hoppa scen 5, gå direkt på tabellen.
 
