@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-// The stop condition for both demos. Exit 0 only when every rule holds.
-// Usage: node scripts/check.mjs <loop|graph>
+// The stop condition for both the loop and the graph. Exit 0 only when every rule holds.
+// Usage: node examples/triage/check.mjs <loop|graph>
 import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { join, basename } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const ROOT = fileURLToPath(new URL('..', import.meta.url));
+const ROOT = fileURLToPath(new URL('.', import.meta.url));
 const CATEGORIES = ['refund', 'login', 'feature', 'billing', 'other'];
 const PRIORITIES = ['low', 'medium', 'high'];
 const LANGS = ['sv', 'en', 'el'];
@@ -25,38 +25,38 @@ export function parseTicket(md) {
 }
 
 export function parseAmountSEK(body) {
-  const m = body.match(/(\d{1,3}(?:[  ]\d{3})+|\d+)\s*(?:SEK|kr)\b/i);
-  return m ? Number(m[1].replace(/[  ]/g, '')) : null;
+  const m = body.match(/(\d{1,3}(?:[ \u00A0]\d{3})+|\d+)\s*(?:SEK|kr)\b/i);
+  return m ? Number(m[1].replace(/[ \u00A0]/g, '')) : null;
 }
 
 export function validate({ tickets, outputs, customers }) {
   const errors = [];
   const err = (id, msg) => errors.push(`✗ ${id}: ${msg}`);
   const ids = new Set(tickets.map(t => t.id));
-  for (const id of Object.keys(outputs)) if (!ids.has(id)) err(id, 'triaged-fil utan matchande ticket i inbox');
+  for (const id of Object.keys(outputs)) if (!ids.has(id)) err(id, 'triaged file has no matching ticket in inbox');
 
   for (const t of tickets) {
     const raw = outputs[t.id];
-    if (raw === undefined) { err(t.id, `saknar triaged/<target>/${t.id}.json`); continue; }
+    if (raw === undefined) { err(t.id, `missing triaged/<target>/${t.id}.json`); continue; }
     let o;
-    try { o = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch { err(t.id, 'ogiltig JSON'); continue; }
-    for (const f of FIELDS) if (!(f in o)) err(t.id, `saknar fält "${f}"`);
-    if (o.id !== t.id) err(t.id, `id "${o.id}" matchar inte filnamnet`);
-    if (!CATEGORIES.includes(o.category)) err(t.id, `category "${o.category}" inte i ${CATEGORIES.join('|')}`);
-    if (!PRIORITIES.includes(o.priority)) err(t.id, `priority "${o.priority}" inte i ${PRIORITIES.join('|')}`);
-    if (!LANGS.includes(o.language)) err(t.id, `language "${o.language}" inte i ${LANGS.join('|')}`);
-    else if (o.language !== t.lang) err(t.id, `language "${o.language}" ≠ ticketens lang "${t.lang}"`);
-    if (typeof o.escalate !== 'boolean') err(t.id, 'escalate måste vara true/false');
-    if (o.category === 'other' && o.escalate !== true) err(t.id, 'category other ⇒ escalate måste vara true');
+    try { o = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch { err(t.id, 'invalid JSON'); continue; }
+    for (const f of FIELDS) if (!(f in o)) err(t.id, `missing field "${f}"`);
+    if (o.id !== t.id) err(t.id, `id "${o.id}" does not match the filename`);
+    if (!CATEGORIES.includes(o.category)) err(t.id, `category "${o.category}" not in ${CATEGORIES.join('|')}`);
+    if (!PRIORITIES.includes(o.priority)) err(t.id, `priority "${o.priority}" not in ${PRIORITIES.join('|')}`);
+    if (!LANGS.includes(o.language)) err(t.id, `language "${o.language}" not in ${LANGS.join('|')}`);
+    else if (o.language !== t.lang) err(t.id, `language "${o.language}" ≠ ticket lang "${t.lang}"`);
+    if (typeof o.escalate !== 'boolean') err(t.id, 'escalate must be true/false');
+    if (o.category === 'other' && o.escalate !== true) err(t.id, 'category other ⇒ escalate must be true');
     const amount = parseAmountSEK(t.body ?? '');
     if (o.category === 'refund' && amount !== null && amount > REFUND_LIMIT_SEK && o.escalate !== true)
-      err(t.id, `refund ${amount} SEK > ${REFUND_LIMIT_SEK} ⇒ escalate måste vara true`);
+      err(t.id, `refund ${amount} SEK > ${REFUND_LIMIT_SEK} ⇒ escalate must be true`);
     if (customers[t.from]?.tier === 'enterprise' && o.priority !== 'high')
-      err(t.id, `enterprise-kund ⇒ priority måste vara high (fick "${o.priority}")`);
+      err(t.id, `enterprise customer ⇒ priority must be high (got "${o.priority}")`);
     if (o.escalate === false && (typeof o.reply !== 'string' || o.reply.trim().length < MIN_REPLY_CHARS))
-      err(t.id, `ej eskalerad ⇒ reply måste vara ≥ ${MIN_REPLY_CHARS} tecken`);
+      err(t.id, `not escalated ⇒ reply must be ≥ ${MIN_REPLY_CHARS} chars`);
     if (o.escalate === true && (typeof o.reason !== 'string' || !o.reason.trim()))
-      err(t.id, 'eskalerad ⇒ reason måste vara ifylld');
+      err(t.id, 'escalated ⇒ reason must be filled in');
   }
   return errors;
 }
@@ -76,7 +76,7 @@ export function loadFromDisk(target) {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const target = process.argv[2];
   if (!['loop', 'graph'].includes(target)) {
-    console.error('Användning: node scripts/check.mjs <loop|graph>');
+    console.error('Usage: node examples/triage/check.mjs <loop|graph>');
     process.exit(2);
   }
   const data = loadFromDisk(target);
@@ -85,8 +85,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   if (errors.length) {
     const failed = new Set(errors.map(e => e.slice(2, e.indexOf(':'))));
     console.error(errors.join('\n'));
-    console.error(`\n${n - failed.size}/${n} tickets OK · ${errors.length} problem · mål: triaged/${target}/`);
+    console.error(`\n${n - failed.size}/${n} tickets OK · ${errors.length} problems · target: examples/triage/triaged/${target}/`);
     process.exit(1);
   }
-  console.log(`✓ ALLA TICKETS TRIAGERADE (${n}/${n}) · triaged/${target}/`);
+  console.log(`✓ ALL TICKETS TRIAGED (${n}/${n}) · examples/triage/triaged/${target}/`);
 }

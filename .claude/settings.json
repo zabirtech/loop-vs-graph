@@ -1,16 +1,24 @@
 {
+  "extraKnownMarketplaces": {
+    "claude-plugins-official": {
+      "source": { "source": "github", "repo": "anthropics/claude-plugins-official" }
+    }
+  },
+  "enabledPlugins": {
+    "ralph-loop@claude-plugins-official": true
+  },
   "permissions": {
     "allow": [
       "Bash(npm run check:*)",
       "Bash(npm run diff)",
       "Bash(npm run reset)",
       "Bash(npm test)",
-      "Bash(node scripts/check.mjs:*)",
-      "Read(tickets/**)",
-      "Read(triaged/**)",
-      "Read(TRIAGE.md)",
-      "Write(triaged/**)",
-      "Edit(triaged/**)"
+      "Bash(node examples/triage/check.mjs:*)",
+      "Bash(node tasks/*/check.mjs)",
+      "Read(examples/**)",
+      "Read(tasks/**)",
+      "Edit(examples/triage/triaged/**)",
+      "Edit(tasks/**)"
     ]
   }
 }

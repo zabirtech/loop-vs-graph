@@ -1,5 +1,6 @@
 node_modules/
-triaged/*/*.json
+examples/triage/triaged/*/*.json
+tasks/*/out/
 .claude/ralph-loop.local.md
 .DS_Store
 .claude/settings.local.json

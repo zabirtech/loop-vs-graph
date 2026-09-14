@@ -3,13 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Loop engineering vs graph engineering — a Claude Code show-and-tell",
+  "description": "Starter template for loop engineering and graph engineering in Claude Code",
   "scripts": {
-    "check:loop": "node scripts/check.mjs loop",
-    "check:graph": "node scripts/check.mjs graph",
-    "diff": "node scripts/diff.mjs",
-    "reset": "sh scripts/reset.sh",
-    "test": "node --test scripts/check.test.mjs"
+    "check:loop": "node examples/triage/check.mjs loop",
+    "check:graph": "node examples/triage/check.mjs graph",
+    "diff": "node examples/triage/diff.mjs",
+    "reset": "sh examples/triage/reset.sh",
+    "test": "node --test examples/triage/check.test.mjs"
   },
   "engines": { "node": ">=20" }
 }
