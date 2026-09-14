@@ -6,6 +6,8 @@ disable-model-invocation: true
 ---
 Scaffold a loop task named `$ARGUMENTS` (kebab-case; ask for a name if empty).
 
+Run every command from the repo root and never `cd`. The Ralph loop stores its state in `.claude/` relative to the shell's working directory, so a leftover `cd` makes the loop stop after one pass.
+
 1. Is a loop the right fit? Ask: "Do you know the exact steps in advance, and are they the same every run?" If yes, say a graph fits better and suggest `/new-graph`. Continue only if the user still wants a loop.
 2. Ask these one at a time:
    - The goal, in one or two sentences.
