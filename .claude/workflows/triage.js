@@ -1,19 +1,20 @@
 export const meta = {
   name: 'triage',
-  description: 'Triagera support-inboxen som en explicit graf: Inbox → Klassificera → Berika → Svara|Eskalera → Verifiera',
-  whenToUse: 'Demo av graph engineering. Kör via /triage-graph.',
+  description: 'Triage the support inbox as an explicit graph: Inbox → Classify → Enrich → Reply|Escalate → Verify',
+  whenToUse: 'Graph engineering example. Run via /triage-graph.',
   phases: [
-    { title: 'Inbox', detail: 'lista tickets' },
-    { title: 'Klassificera', detail: 'en nod per ticket', model: 'haiku' },
-    { title: 'Berika', detail: 'kund ∥ policy, parallellt per ticket', model: 'haiku' },
-    { title: 'Svara', detail: 'skriv svar på kundens språk' },
-    { title: 'Eskalera', detail: 'kanten du lägger till efter att den bitit dig' },
-    { title: 'Verifiera', detail: 'npm run check:graph' },
+    { title: 'Inbox', detail: 'list tickets' },
+    { title: 'Classify', detail: 'one node per ticket', model: 'haiku' },
+    { title: 'Enrich', detail: 'customer ∥ policy, in parallel per ticket', model: 'haiku' },
+    { title: 'Reply', detail: 'write reply in the customer language' },
+    { title: 'Escalate', detail: 'the edge you add after it bit you' },
+    { title: 'Verify', detail: 'npm run check:graph' },
   ],
 }
 
 // ── Node contracts (schemas) ──────────────────────────────────────────────
-const OUT = 'triaged/graph'
+const DIR = 'examples/triage'
+const OUT = `${DIR}/triaged/graph`
 const INBOX_SCHEMA = { type: 'object', properties: { ids: { type: 'array', items: { type: 'string' } } }, required: ['ids'] }
 const CLASSIFY_SCHEMA = {
   type: 'object',
@@ -42,35 +43,35 @@ const VERIFY_SCHEMA = { type: 'object', properties: { exitCode: { type: 'number'
 // ── Node: Inbox ───────────────────────────────────────────────────────────
 phase('Inbox')
 const inbox = await agent(
-  'List the ticket ids in tickets/inbox/ (filenames without .md, sorted). Return {ids}.',
+  `List the ticket ids in ${DIR}/tickets/inbox/ (filenames without .md, sorted). Return {ids}.`,
   { label: 'inbox', phase: 'Inbox', schema: INBOX_SCHEMA, effort: 'low' },
 )
 const ids = inbox?.ids ?? []
-log(`${ids.length} tickets i inboxen → pipeline, ingen barriär mellan noder`)
+log(`${ids.length} tickets in inbox → pipeline, no barrier between nodes`)
 
-// ── Per-ticket pipeline: Klassificera → Berika → Svara | Eskalera ─────────
+// ── Per-ticket pipeline: Classify → Enrich → Reply | Escalate ─────────────
 const results = await pipeline(
   ids,
 
-  // Node: Klassificera
+  // Node: Classify
   (id) => agent(
-    `Read tickets/inbox/${id}.md and tickets/policy.md. Classify the ticket into exactly one category from the policy; use "other" if it does not fit exactly (legal/GDPR is always "other"). language = the ticket's frontmatter lang. from = frontmatter from (the email). refundAmountSEK = the amount if the customer asks for money back for an order, else null. summary = one sentence. Return data only.`,
-    { label: `klassificera:${id}`, phase: 'Klassificera', schema: CLASSIFY_SCHEMA, model: 'haiku', effort: 'low' },
+    `Read ${DIR}/tickets/inbox/${id}.md and ${DIR}/tickets/policy.md. Classify the ticket into exactly one category from the policy; use "other" if it does not fit exactly (legal/GDPR is always "other"). language = the ticket's frontmatter lang. from = frontmatter from (the email). refundAmountSEK = the amount if the customer asks for money back for an order, else null. summary = one sentence. Return data only.`,
+    { label: `classify:${id}`, phase: 'Classify', schema: CLASSIFY_SCHEMA, model: 'haiku', effort: 'low' },
   ),
 
-  // Node: Berika — two branches, genuinely parallel
+  // Node: Enrich — two branches, genuinely parallel
   (cls, id) => parallel([
     () => agent(
-      `Look up the key "${cls.from}" in tickets/customers.json. Return tier ("unknown" if missing), name, notes.`,
-      { label: `kund:${id}`, phase: 'Berika', schema: CUSTOMER_SCHEMA, model: 'haiku', effort: 'low' },
+      `Look up the key "${cls.from}" in ${DIR}/tickets/customers.json. Return tier ("unknown" if missing), name, notes.`,
+      { label: `customer:${id}`, phase: 'Enrich', schema: CUSTOMER_SCHEMA, model: 'haiku', effort: 'low' },
     ),
     () => agent(
-      `Read tickets/policy.md. Ticket ${id}: category=${cls.category}, refundAmountSEK=${cls.refundAmountSEK}, summary="${cls.summary}". Decide mustEscalate and priority strictly per the policy. Customer tier is NOT known here (applied later in code), so ignore the enterprise rule. reason = one short Swedish sentence if escalating, else "".`,
-      { label: `policy:${id}`, phase: 'Berika', schema: POLICY_SCHEMA, model: 'haiku', effort: 'low' },
+      `Read ${DIR}/tickets/policy.md. Ticket ${id}: category=${cls.category}, refundAmountSEK=${cls.refundAmountSEK}, summary="${cls.summary}". Decide mustEscalate and priority strictly per the policy. Customer tier is NOT known here (applied later in code), so ignore the enterprise rule. reason = one short English sentence if escalating, else "".`,
+      { label: `policy:${id}`, phase: 'Enrich', schema: POLICY_SCHEMA, model: 'haiku', effort: 'low' },
     ),
   ]).then(([cust, pol]) => ({ cls, cust, pol })),
 
-  // Node: Svara | Eskalera — the edge is code
+  // Node: Reply | Escalate — the edge is code
   (ctx, id) => {
     if (!ctx.cust || !ctx.pol) return null
     const priority = ctx.cust.tier === 'enterprise' ? 'high' : ctx.pol.priority   // enterprise rule lives here
@@ -78,24 +79,24 @@ const results = await pipeline(
 
     // ← the edge you only add after it bit you
     if (ctx.cls.category === 'other' || ctx.pol.mustEscalate) {
-      const json = { ...base, escalate: true, reason: ctx.pol.reason || 'Utanför supportens kategorier – eskaleras', reply: '' }
+      const json = { ...base, escalate: true, reason: ctx.pol.reason || 'Outside support categories – escalated', reply: '' }
       return agent(
         `Create the file ${OUT}/${id}.json containing exactly this JSON, pretty-printed with 2 spaces: ${JSON.stringify(json)}. Return {path, escalate: true}.`,
-        { label: `eskalera:${id}`, phase: 'Eskalera', schema: WRITE_SCHEMA, effort: 'low' },
+        { label: `escalate:${id}`, phase: 'Escalate', schema: WRITE_SCHEMA, effort: 'low' },
       )
     }
     return agent(
-      `Read tickets/inbox/${id}.md and tickets/policy.md. Customer: ${ctx.cust.name} (tier ${ctx.cust.tier}). CRM notes: ${ctx.cust.notes || 'none'}. Write a reply to the customer in language "${ctx.cls.language}" following the policy's "Svar" section: friendly, concrete next step, at least two sentences, at least 60 characters. Then create ${OUT}/${id}.json (pretty-printed) with fields ${JSON.stringify(base)} plus escalate: false, reason: "", reply: <your reply>. Return {path, escalate: false}.`,
-      { label: `svara:${id}`, phase: 'Svara', schema: WRITE_SCHEMA },
+      `Read ${DIR}/tickets/inbox/${id}.md and ${DIR}/tickets/policy.md. Customer: ${ctx.cust.name} (tier ${ctx.cust.tier}). CRM notes: ${ctx.cust.notes || 'none'}. Write a reply to the customer in language "${ctx.cls.language}" following the policy's "Reply" section: friendly, concrete next step, at least two sentences, at least 60 characters. Then create ${OUT}/${id}.json (pretty-printed) with fields ${JSON.stringify(base)} plus escalate: false, reason: "", reply: <your reply>. Return {path, escalate: false}.`,
+      { label: `reply:${id}`, phase: 'Reply', schema: WRITE_SCHEMA },
     )
   },
 )
 
-// ── Node: Verifiera — a barrier is correct here: it needs every file on disk ─
-phase('Verifiera')
+// ── Node: Verify — a barrier is correct here: it needs every file on disk ─
+phase('Verify')
 const verify = await agent(
   'Run `npm run check:graph` in the repo root. Return exitCode and the complete output verbatim.',
-  { label: 'verifiera', phase: 'Verifiera', schema: VERIFY_SCHEMA, effort: 'low' },
+  { label: 'verify', phase: 'Verify', schema: VERIFY_SCHEMA, effort: 'low' },
 )
 
 return {
